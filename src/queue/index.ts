@@ -86,24 +86,27 @@ export class RedisQueue<T = any> implements Queue<T> {
   constructor(name: string, redisUrl: string = env.REDIS_URL || '') {
     this.name = name;
     this.client = createClient({ url: redisUrl });
-    
+
     this.client.on('error', err => {
       logger.error({ err }, 'Redis queue error');
     });
-    
-    this.client.connect().then(() => {
-      this.connected = true;
-      logger.info({ queueName: name }, 'Redis queue connected');
-    }).catch(err => {
-      logger.error({ err }, 'Failed to connect to Redis');
-    });
+
+    this.client
+      .connect()
+      .then(() => {
+        this.connected = true;
+        logger.info({ queueName: name }, 'Redis queue connected');
+      })
+      .catch(err => {
+        logger.error({ err }, 'Failed to connect to Redis');
+      });
   }
 
   async enqueue(data: T): Promise<void> {
     if (!this.connected) {
       throw new Error('Redis queue not connected');
     }
-    
+
     await this.client.lPush(`queue:${this.name}`, JSON.stringify(data));
     logger.debug({ queueName: this.name }, 'Job enqueued to Redis');
   }
@@ -123,12 +126,12 @@ export class RedisQueue<T = any> implements Queue<T> {
       clearInterval(this.interval);
       this.interval = null;
     }
-    
+
     if (this.connected) {
       await this.client.quit();
       this.connected = false;
     }
-    
+
     logger.info({ queueName: this.name }, 'Redis queue shut down');
   }
 
@@ -166,5 +169,5 @@ export function createQueue<T = any>(name: string, useRedis: boolean = false): Q
 export default {
   createQueue,
   InMemoryQueue,
-  RedisQueue
+  RedisQueue,
 };

@@ -1,2 +1,48 @@
 # deps
 node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# IDE and editor folders
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Prisma
+*.db
+*.db-journal
+prisma/migrations/*_init/
+
+# Testing
+coverage/
+
+# Caches
+.cache/
+.turbo/
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

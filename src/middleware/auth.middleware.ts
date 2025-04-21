@@ -33,7 +33,7 @@ export const authenticate: MiddlewareHandler = async (c: Context, next: Next) =>
   // Set user in context
   c.set('user', payload);
   logger.debug({ userId: payload.userId }, 'User authenticated');
-  
+
   await next();
 };
 
@@ -44,21 +44,24 @@ export const authenticate: MiddlewareHandler = async (c: Context, next: Next) =>
 export const authorize = (requiredRoles: string[]): MiddlewareHandler => {
   return async (c: Context, next: Next) => {
     const user = c.get('user');
-    
+
     if (!user) {
       logger.debug('No user found in context');
       return c.json({ message: 'Unauthorized' }, 401);
     }
 
     const hasAccess = AuthService.hasRoles(user.roles, requiredRoles);
-    
+
     if (!hasAccess) {
-      logger.debug({ 
-        userId: user.userId, 
-        userRoles: user.roles, 
-        requiredRoles 
-      }, 'Insufficient permissions');
-      
+      logger.debug(
+        {
+          userId: user.userId,
+          userRoles: user.roles,
+          requiredRoles,
+        },
+        'Insufficient permissions'
+      );
+
       return c.json({ message: 'Forbidden' }, 403);
     }
 

@@ -1,9 +1,9 @@
-import { Context, MiddlewareHandler, Next } from "hono";
-import { env } from "../config/env";
-import { createLogger } from "../logger";
-import { createClient } from "redis";
+import { Context, MiddlewareHandler, Next } from 'hono';
+import { env } from '../config/env';
+import { createLogger } from '../logger';
+import { createClient } from 'redis';
 
-const logger = createLogger("rate-limit");
+const logger = createLogger('rate-limit');
 
 // In-memory store for rate limiting
 const inMemoryStore = new Map<string, { count: number; resetTime: number }>();
@@ -19,9 +19,7 @@ interface RateLimitOptions {
 /**
  * Rate limiting middleware
  */
-export const rateLimit = (
-  options: RateLimitOptions = {}
-): MiddlewareHandler => {
+export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => {
   const windowMs = options.windowMs || parseInt(env.RATE_LIMIT_WINDOW_MS, 10);
   const max = options.max || parseInt(env.RATE_LIMIT_MAX_REQUESTS, 10);
 
@@ -29,7 +27,7 @@ export const rateLimit = (
   const keyGenerator =
     options.keyGenerator ||
     ((c: Context) => {
-      const ip = c.req.header("x-forwarded-for") || "unknown";
+      const ip = c.req.header('x-forwarded-for') || 'unknown';
       return `rate-limit:${ip}`;
     });
 
@@ -39,7 +37,7 @@ export const rateLimit = (
     ((c: Context) => {
       return c.json(
         {
-          message: "Too many requests, please try again later.",
+          message: 'Too many requests, please try again later.',
         },
         429
       );
@@ -51,11 +49,11 @@ export const rateLimit = (
     try {
       redisClient = createClient({ url: env.REDIS_URL });
       redisClient.connect().catch((err: any) => {
-        logger.error({ err }, "Redis connection error");
+        logger.error({ err }, 'Redis connection error');
       });
-      logger.info("Redis connected for distributed rate limiting");
+      logger.info('Redis connected for distributed rate limiting');
     } catch (err) {
-      logger.error({ err }, "Failed to initialize Redis client");
+      logger.error({ err }, 'Failed to initialize Redis client');
     }
   }
 
@@ -76,14 +74,12 @@ export const rateLimit = (
           redisClient.get(resetTimeKey),
         ]);
 
-        resetTime = storedResetTime
-          ? parseInt(storedResetTime)
-          : now + windowMs;
+        resetTime = storedResetTime ? parseInt(storedResetTime) : now + windowMs;
 
         if (now > resetTime) {
           // Window expired, reset counter
           await Promise.all([
-            redisClient.set(key, "1"),
+            redisClient.set(key, '1'),
             redisClient.set(resetTimeKey, String(now + windowMs)),
             redisClient.expire(key, Math.ceil(windowMs / 1000)),
             redisClient.expire(resetTimeKey, Math.ceil(windowMs / 1000)),
@@ -95,14 +91,14 @@ export const rateLimit = (
           remainingRequests = Math.max(0, max - newCount);
 
           if (newCount > max) {
-            logger.debug({ key, count: newCount }, "Rate limit exceeded");
+            logger.debug({ key, count: newCount }, 'Rate limit exceeded');
             return handler(c, next);
           }
 
           await redisClient.set(key, String(newCount));
         }
       } catch (err) {
-        logger.error({ err }, "Redis rate limiting error");
+        logger.error({ err }, 'Redis rate limiting error');
         // Fallback to in-memory if Redis fails
         return inMemoryRateLimit(key, windowMs, max, c, next, handler);
       }
@@ -112,9 +108,9 @@ export const rateLimit = (
     }
 
     // Set rate limit headers
-    c.header("X-RateLimit-Limit", String(max));
-    c.header("X-RateLimit-Remaining", String(remainingRequests));
-    c.header("X-RateLimit-Reset", String(resetTime));
+    c.header('X-RateLimit-Limit', String(max));
+    c.header('X-RateLimit-Remaining', String(remainingRequests));
+    c.header('X-RateLimit-Reset', String(resetTime));
 
     return await next();
   };
@@ -148,9 +144,9 @@ async function inMemoryRateLimit(
       resetTime: now + windowMs,
     });
 
-    c.header("X-RateLimit-Limit", String(max));
-    c.header("X-RateLimit-Remaining", String(max - 1));
-    c.header("X-RateLimit-Reset", String(now + windowMs));
+    c.header('X-RateLimit-Limit', String(max));
+    c.header('X-RateLimit-Remaining', String(max - 1));
+    c.header('X-RateLimit-Reset', String(now + windowMs));
 
     return await next();
   }
@@ -162,9 +158,9 @@ async function inMemoryRateLimit(
       resetTime: now + windowMs,
     });
 
-    c.header("X-RateLimit-Limit", String(max));
-    c.header("X-RateLimit-Remaining", String(max - 1));
-    c.header("X-RateLimit-Reset", String(now + windowMs));
+    c.header('X-RateLimit-Limit', String(max));
+    c.header('X-RateLimit-Remaining', String(max - 1));
+    c.header('X-RateLimit-Reset', String(now + windowMs));
 
     return await next();
   }
@@ -174,13 +170,13 @@ async function inMemoryRateLimit(
   inMemoryStore.set(key, data);
 
   if (data.count > max) {
-    logger.debug({ key, count: data.count }, "Rate limit exceeded");
+    logger.debug({ key, count: data.count }, 'Rate limit exceeded');
     return handler(c, next);
   }
 
-  c.header("X-RateLimit-Limit", String(max));
-  c.header("X-RateLimit-Remaining", String(Math.max(0, max - data.count)));
-  c.header("X-RateLimit-Reset", String(data.resetTime));
+  c.header('X-RateLimit-Limit', String(max));
+  c.header('X-RateLimit-Remaining', String(Math.max(0, max - data.count)));
+  c.header('X-RateLimit-Reset', String(data.resetTime));
 
   return await next();
 }

@@ -1,8 +1,8 @@
-import { verify, sign } from "jsonwebtoken";
-import { env } from "../config/env";
-import { createLogger } from "../logger";
+import { verify, sign } from 'jsonwebtoken';
+import { env } from '../config/env';
+import { createLogger } from '../logger';
 
-const logger = createLogger("auth-service");
+const logger = createLogger('auth-service');
 
 export interface User {
   id: string;
@@ -39,7 +39,7 @@ export class AuthService {
     try {
       return verify(token, env.JWT_SECRET) as TokenPayload;
     } catch (error) {
-      logger.error({ error }, "Failed to verify token");
+      logger.error({ error }, 'Failed to verify token');
       return null;
     }
   }
@@ -48,6 +48,6 @@ export class AuthService {
    * Check if user has required roles
    */
   static hasRoles(userRoles: string[], requiredRoles: string[]): boolean {
-    return requiredRoles.every((role) => userRoles.includes(role));
+    return requiredRoles.every(role => userRoles.includes(role));
   }
 }

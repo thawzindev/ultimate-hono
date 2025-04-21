@@ -4,9 +4,7 @@ import { env } from '../config/env';
 // Configure logger
 export const logger = pino({
   level: env.LOG_LEVEL,
-  transport: env.NODE_ENV === 'development' 
-    ? { target: 'pino-pretty' }
-    : undefined,
+  transport: env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
   base: {
     env: env.NODE_ENV,
   },
